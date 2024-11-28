@@ -31,42 +31,43 @@ export default function Index() {
     requestPermission();
   }
   
-  const API_URL = 'http://192.168.1.156:3007/upload';
+  const API_URL = 'http://192.168.1.156:3306/kuku';
 
-  const uploadImageToAPI = async () => {
-    if (selectedImage) {
-      console.log('Selected Image:', selectedImage);
-      const formData = new FormData();
-      formData.append('image', {
-        uri: selectedImage,
-        type: 'image/jpeg',
-        name: 'test-image.jpg',
-      } as unknown as File);
-  
-      try {
-        console.log('Uploading to:', API_URL);
-        const response = await fetch(API_URL, {
+// Function to upload the image to the API
+const uploadImageToAPI = async (localUri: string) => {
+  if (!localUri) {
+      Alert.alert('Error', 'No image selected for upload.');
+      return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', {
+      uri: localUri,
+      name: 'photo.jpg',
+      type: 'image/jpeg',
+  } as any);
+
+  try {
+      const response = await fetch(API_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'multipart/form-data',
+              'Content-Type': 'multipart/form-data',
           },
           body: formData,
-        });
-        const data = await response.json();
-        console.log('Server Response:', data);
-  
-        // Display the uploaded image using the returned fileUrl
-        if (data.fileDetails.fileUrl) {
-          alert(`Image uploaded successfully! View it at: ${data.fileDetails.fileUrl}`);
-          setSelectedImage(data.fileDetails.fileUrl);
-        }
-      } catch (error) {
-        console.error('Error uploading image:', error);
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+          Alert.alert('Upload Success', `Image uploaded: ${data.filename}`);
+      } else {
+          console.error('Upload failed:', data);
+          Alert.alert('Upload Failed', `Error: ${data.error}`);
       }
-    } else {
-      console.error('No image selected');
-    }
-  };
+  } catch (error) {
+      console.error('Error uploading image:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+  }
+};
   
   
   
@@ -115,6 +116,7 @@ export default function Index() {
         });
 
         await MediaLibrary.saveToLibraryAsync(localUri);
+        await uploadImageToAPI(localUri);
         if (localUri) {
           alert('Saved!');
         }
@@ -149,7 +151,7 @@ export default function Index() {
       </View>
       {showAppOptions ? (
         <View style={styles.optionsContainer}>
-          <Button theme="primary" label="Send to api" onPress={uploadImageToAPI} />
+
           <View style={styles.optionsRow}>
             <IconButton icon="refresh" label="Reset" onPress={onReset} />
             <CircleButton onPress={onAddSticker} />
