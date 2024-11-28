@@ -31,22 +31,67 @@ export default function Index() {
     requestPermission();
   }
   
+  const API_URL = 'http://192.168.1.156:3007/upload';
+
+  const uploadImageToAPI = async () => {
+    if (selectedImage) {
+      console.log('Selected Image:', selectedImage);
+      const formData = new FormData();
+      formData.append('image', {
+        uri: selectedImage,
+        type: 'image/jpeg',
+        name: 'test-image.jpg',
+      } as unknown as File);
+  
+      try {
+        console.log('Uploading to:', API_URL);
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        console.log('Server Response:', data);
+  
+        // Display the uploaded image using the returned fileUrl
+        if (data.fileDetails.fileUrl) {
+          alert(`Image uploaded successfully! View it at: ${data.fileDetails.fileUrl}`);
+          setSelectedImage(data.fileDetails.fileUrl);
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      }
+    } else {
+      console.error('No image selected');
+    }
+  };
+  
+  
+  
+  
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
+      // base64: true, // Enable base64
     });
     
+    
+    console.log('typeof result = ', typeof result);
     console.log('Result:', JSON.stringify(result, null, 2));
 
-
+    
     if (!result.canceled) {
       setSelectedImage(result.assets[0].uri);
       setShowAppOptions(true);
     } else {
       alert('You did not select any image.');
     }
+
+    
   };
 
   const onReset = () => {
@@ -104,6 +149,7 @@ export default function Index() {
       </View>
       {showAppOptions ? (
         <View style={styles.optionsContainer}>
+          <Button theme="primary" label="Send to api" onPress={uploadImageToAPI} />
           <View style={styles.optionsRow}>
             <IconButton icon="refresh" label="Reset" onPress={onReset} />
             <CircleButton onPress={onAddSticker} />
